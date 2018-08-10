@@ -1,5 +1,5 @@
 ---
-title: "BreastCancerStudy"
+title: "Breast Cancer Study"
 author: "Jason Lin, Jonathan Marin, Ryan Bass"
 date: "August 9, 2018"
 output: html_document
