@@ -1,0 +1,148 @@
+---
+title: "BreastCancerStudy"
+author: "Jason Lin, Jonathan Marin, Ryan Bass"
+date: "August 9, 2018"
+output: html_document
+---
+
+# Intoduction
+
+The objective is to identify each of a number of benign or malignant classes. Samples arrive periodically as Dr. Wolberg reports his clinical cases. The database therefore reflects this chronological grouping of the data. This grouping information appears immediately below, having been removed from the data itself. Each variable except for the first was converted into 11 primitive numerical attributes with values ranging from 0 through 10. There are 16 missing attribute values. See cited below for more details.
+
+
+
+# Data Description
+
+Biopsies were collected via fine needle aspiration (FNA), it is a procedure where a thin hollow needle is inserted into the patient's tissue of question to aspirate cells to be later examined using microscopy. Eleven cytological characteristics were graded individually on how they portrayed benign or malignant characteristics. This scale was based on a 1-10 grade administered by a Dr. Wolberg (this is right! - JM) as the samples arrived periodically. A lower score corresponds to non-cancerous attributes (benign) of the particular cytological characteristic while a higher score corresponds to a more cancerous attribute (malignant).
+
+## Data Fields
+
+* Id = Unique identification number administered in chronologically order as the samples arrived and were graded.
+*	Cl.thickness = clump thickness. Since "normal" epithelial cells have contact inhibition on many points of contact on their cellular membrane, their ability to grow on top of one another is assessed by looking at whether the sample is a monolayer of cells (exhibits contact inhibition) or is multilayered (ie. Increased clump thickness and does not exhibit contact inhibition). Increased clump thickness is thus an indicator of malignant cancerous cells present in the sample.
+*	Cell.size = Uniformity of Cell Size. A biopsy sample is such a small tissue sample that when they are sampled you would expect nearly all of the cells sampled to be the same cell type. Because of this you would expect the cells to exhibit a uniform size since they should nearly all be the same cell type. This grade is then assessed as the lower the score the more uniform the cell sizes are (benign/"normal") while higher scores show more differing cell sizes potentially corresponding with being considered a malignant attribute.
+*	Cell.shape = Uniformity of Cell Shape. Same explanation as uniformity of cell size but substitute cell shape instead.
+*	Marg.adhesion = Marginal Adhesion. This grade is based off of the level of cohesion of the periphery of the epithelial cells. Healthy (or for these grading purposes benign) epithelial cells will normally bind tightly to one another while more malignant cancerous cells tend to lose this attribute in order to move around the body.
+*	Epith.c.size = Single Epithelial Cell Size. Similar to uniformity of cell sizes and cell shapes, single epithelial cell size however looks for individual cells that are abnormal in size. The larger an individual cell is in what should be a nearly homogenous sample would lead an analyst to believe it is more likely malignant than benign/healthy.
+*	Bare.nuclei = Bare nuclei is a term used to describe a cells degeneration of cytoplasm, only leaving visible nuclei.
+*	Bl.cromatin = this attribute describes a uniform "texture" of the nucleus seen in benign cells. In cancer cells the chromatin tends to be coarser.
+*	Normal.nucleoli = Normal nucleoli. The nucleolus is the dark-staining portion of the nucleus where, among other things, ribosomal subunits are assembled. Ribosomes are needed to translate transcribed RNA into proteins. Therefore in actively growing cells these nucleoli are very large (also usually one or two nucleolus per nucleus but sometimes more) and easier to see under a microscope compared to a benign/healthy cell. A large collection of healthy or benign somatic epithelial cells therefore would not have an abundance of nucleoli or abnormally large ones. However, malignant cancerous cells are constantly growing and would have large and an unusually high amount for epithelial cells. 
+*	Mitoses = Mitoses. Mitosis is the process of making two genetically identical daughter cells from one parent cell. For somatic epithelial cells and benign cells this process does not happen regularly and only occurs when the cells receive certain signals from other cells to divide. Malignant cancerous cells lose the need for these signals in order to conduct mitosis or produce the signals themselves in a perpetual self-feedback loop. Because of this when looking at a tissue sample under a microscope, malignant cancerous cells will have an abnormal amount of cells going through the stages of mitosis. So the lower the grade here the less mitosis is present, while higher grades correspond to higher amounts of mitosis visible in the sample.
+
+
+# Code
+
+```{r setup, include=TRUE}
+
+# Install the packages if they are not installed already
+knitr::opts_chunk$set(echo = TRUE)
+
+# install the required packages if needed
+list.of.packages <- c("sqldf", "glmnet", "gfortran", "rgl", "CVST", "igraph", "recipes", "ggplot2", "caret", "forcats", "olsrr", "tidyr", "corrplot", "parallel", "doParallel", "mlbench" ,"pheatmap","RColorBrewer","rpart.plot")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos="http://cran.r-project.org")
+
+
+library(sqldf) # Used for manipulating the data frames using SQL
+library(glmnet) # Used for...
+library(caret) # Used for...
+library(forcats) # Used for...
+library(olsrr) # Used for creating the foward
+library(MASS) # Used for backward, and stepwise models
+library(tidyr) #Used for creating some of the plots
+library(ggplot2) #Used for creating some of the plots
+library(corrplot) #Used to create the correlation matrix
+library(parallel) #Using to assign more cores and allow parallel processing
+library(doParallel) #Using to assign more cores and allow parallel processing
+library(mlbench) #Contains the data set
+library(pheatmap)
+library(RColorBrewer)
+library(rpart.plot)
+
+#Load in the data
+data("BreastCancer")
+
+
+class(BreastCancer$Cl.thickness)
+class(BreastCancer$Cell.size)
+class(BreastCancer$Cell.shape)
+class(BreastCancer$Marg.adhesion)
+class(BreastCancer$Epith.c.size)
+class(BreastCancer$Bare.nuclei)
+class(BreastCancer$Bl.cromatin)
+class(BreastCancer$Normal.nucleoli)
+class(BreastCancer$Mitoses)
+
+#BreastCancer$Cl.thickness <- as.numeric(BreastCancer$Cl.thickness)
+#BreastCancer$Cell.size <- as.numeric(BreastCancer$Cell.size)
+#BreastCancer$Cell.shape <- as.numeric(BreastCancer$Cell.shape)
+#BreastCancer$Marg.adhesion<- as.numeric(BreastCancer$Marg.adhesion)
+#BreastCancer$Epith.c.size<- as.numeric(BreastCancer$Epith.c.size)
+#BreastCancer$Bare.nuclei<- as.numeric(BreastCancer$Bare.nuclei)
+#BreastCancer$Bl.cromatin<- as.numeric(BreastCancer$Bl.cromatin)
+#BreastCancer$Normal.nucleoli<- as.numeric(BreastCancer$Normal.nucleoli)
+#BreastCancer$Mitoses<- as.numeric(BreastCancer$Mitoses)
+
+
+# Set seed for reproducibility
+set.seed(0)
+
+#This shows us what is null
+sapply(BreastCancer, function(x) sum(is.na(x)))
+
+BreastCancer$Bare.nuclei <- as.integer(BreastCancer$Bare.nuclei)
+
+# use mean imputation to handle missing Bare.nuclei data.  Median was 1
+
+mean(as.integer(BreastCancer$Bare.nuclei), na.rm = TRUE)
+
+BreastCancer$Bare.nuclei[is.na(BreastCancer$Bare.nuclei)] <- 3
+  
+#Double Check
+sapply(BreastCancer, function(x) sum(is.na(x)))
+
+
+#Split the Data into train and test
+
+smp_size <- floor(.70* nrow(BreastCancer))
+
+train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
+
+train <- BreastCancer[train_ind,]
+test <- BreastCancer[-train_ind,]
+
+xtrain <- train[,3:ncol(train)-1]
+ytrain <- train$Class
+
+
+#Having trouble with the heatmap and need to lookup the error some more
+
+#x<-t(xtrain)
+#y <- t(ytrain)
+#colnames(x)<-ytrain
+#pheatmap(x,annotation_col=data.frame(Class=ytrain),scale="row",legend=T,
+         #color=colorRampPalette(c("blue","white", "red"), space = "rgb")(100))
+
+#Detect how many cores/clusters you have on your computer and subtract 1 for your OS and stuff
+#Shut some stuff down and save if you have stuff open! 
+
+cluster <- makeCluster(detectCores() - 1) 
+registerDoParallel(cluster)
+
+
+fitControl <- trainControl(## 10-fold CV
+                           method = "cv",
+                           number = 10,
+                           allowParallel = TRUE)
+
+model_random_forest = train(Class ~ ., data = train[,-1], method = "rf", trControl = fitControl)
+
+decision_tree = train(Class ~ ., data = train[,-1], method = "rpart", trControl = fitControl)
+
+tree.2 <- rpart(decision_tree, train)
+prp(tree.2)
+
+
+
+```
+
+
