@@ -1,0 +1,45 @@
+FILENAME REFFILE '/home/jglin0/sasuser.v94/Project2/BreastCancerR.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	replace
+	OUT=WORK.BreastCancer;
+	GETNAMES=YES;
+RUN;
+
+proc contents data=BreastCancer out=names;
+run;
+
+options mlogic symbolgen;
+proc sql;
+select  name into: cancervars separated by " " from names  where (name ne "VAR1" and name ne "Class" and name ne "Id");
+quit;
+
+%put &cancervars;
+
+data BreastCancer_clean;
+set BreastCancer;
+if barenuclei = . then delete;
+run;
+
+/* proc logistic data=BreastCancer_clean; */
+/* class &cancervars / param=ref; */
+/* model Class(event='benign')= mitoses cellsize / selection=forward details influence lackfit; */
+/* run; */
+proc logistic data=BreastCancer_clean;
+class &cancervars /param=ref;
+model Class(event='malignant')= &cancervars/ selection=stepwise scale=none details influence lackfit;
+run;
+proc logistic data=BreastCancer_clean;
+class &cancervars /param=ref;
+model Class(event='malignant')= &cancervars/ selection=forward scale=none details influence lackfit;
+run;
+proc logistic data=BreastCancer_clean;
+class &cancervars /param=ref;
+model Class(event='malignant')= &cancervars/ selection=backward scale=none details influence lackfit;
+run;
+
+proc logistic data=BreastCancer_clean;
+class &cancervars / param=ref;
+model Class(event='malignant')= Barenuclei cellsize clthickness normalnucleoli epithcsize / details influence lackfit;
+run;
