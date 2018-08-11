@@ -41,5 +41,5 @@ run;
 
 proc logistic data=BreastCancer_clean;
 class &cancervars / param=ref;
-model Class(event='malignant')= Barenuclei cellsize clthickness normalnucleoli epithcsize / details influence lackfit;
+model Class(event='malignant')= Barenuclei cellsize clthickness normalnucleoli epithcsize / clparm=both alpha = 0.05 details influence lackfit;
 run;
