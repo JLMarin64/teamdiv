@@ -110,6 +110,11 @@ train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
 train <- BreastCancer[train_ind,]
 test <- BreastCancer[-train_ind,]
 
+export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union select * from test) data")
+
+#Export for Jason so that we have the same train/test set between SAS and R
+write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
+
 xtrain <- train[,3:ncol(train)-1]
 ytrain <- train$Class
 
@@ -128,11 +133,18 @@ ytrain <- train$Class
 cluster <- makeCluster(detectCores() - 1) 
 registerDoParallel(cluster)
 
+lasso.model <- lm(train$SalePrice ~ MSZoning + LotArea + OverallQual + YearBuilt + YearRemodAdd+
+          YearRemodAdd + BsmtFinType1 + BsmtFinSF1 + TotalBsmtSF + CentralAir +
+            X1stFlrSF + GrLivArea + BsmtFullBath + FireplaceQu + GarageType + GarageCars + GarageArea, data = xtrain[,-1])
+
 
 fitControl <- trainControl(## 10-fold CV
                            method = "cv",
                            number = 10,
                            allowParallel = TRUE)
+
+glm_ <- train(Class ~ Age + ForeignWorker + Property.RealEstate + Housing.Own + 
+                   CreditHistory.Critical,  data=training, method="glm", family="binomial")
 
 model_random_forest = train(Class ~ ., data = train[,-1], method = "rf", trControl = fitControl)
 
