@@ -69,6 +69,8 @@ suppressMessages(suppressWarnings(library(rpart.plot)))
 data("BreastCancer")
 
 
+
+
 class(BreastCancer$Cl.thickness)
 class(BreastCancer$Cell.size)
 class(BreastCancer$Cell.shape)
@@ -103,9 +105,13 @@ BreastCancer$Bare.nuclei <- as.integer(BreastCancer$Bare.nuclei)
 mean(as.integer(BreastCancer$Bare.nuclei), na.rm = TRUE)
 
 BreastCancer$Bare.nuclei[is.na(BreastCancer$Bare.nuclei)] <- 3
+
+BreastCancer$Bare.nuclei <- as.factor(BreastCancer$Bare.nuclei)
   
 #Double Check
 sapply(BreastCancer, function(x) sum(is.na(x)))
+
+BreastCancer$Class <- 
 
 
 #Split the Data into train and test
@@ -126,6 +132,17 @@ xtrain <- train[,3:ncol(train)-1]
 ytrain <- train$Class
 
 
+#Checking to see the distribution of Class.  Recall that for a ROC curve that the distribution needs to be even for the target.  For instance, if cancer is 95% we can just predict everything as cancer and be close. 
+table(train$Class)
+
+#Looked up how to handle this and found downSample as the way to counter this. 
+'%ni%' <- Negate('%in%')
+
+down_train <- downSample(x = train[, colnames(train) %ni% "Class"], y = train$Class)
+
+table(down_train$Class)
+
+write.csv(export, file = "DownTrain.csv", row.names = FALSE)
 
 #Having trouble with the heatmap and need to lookup the error some more
 
@@ -154,14 +171,19 @@ fitControl <- trainControl(## 10-fold CV
                            allowParallel = TRUE)
 
 
-model_random_forest = train(Class ~ ., data = train[,-1], method = "rf", trControl = fitControl)
+
+#model_logistic_regression = train(Class ~., data = train[,-1], method = "glm")
+
+logistic_regression <- glm(Class ~ Cell.shape, family = "binomial", data = downSample[,-1])
+
+plot(logistic_regression)
+
+model_random_forest = train(Class ~ ., data = downSample[,-1], method = "rf", trControl = fitControl)
 
 
-#summary(model_log_regression)
+decision_tree = train(Class ~ ., data = downSample[,-1], method = "rpart", trControl = fitControl)
 
-decision_tree = train(Class ~ ., data = train[,-1], method = "rpart", trControl = fitControl)
-
-tree.2 <- rpart(decision_tree, train)
+tree.2 <- rpart(decision_tree, downSample)
 prp(tree.2)
 
 importance_rf <- varImp(model_random_forest, scale = FALSE)
