@@ -3,6 +3,8 @@ title: "Breast Cancer Study"
 author: "Jason Lin, Jonathan Marin, Ryan Bass"
 date: "August 9, 2018"
 output: html_document
+
+
 ---
 
 # Intoduction
@@ -31,35 +33,42 @@ Biopsies were collected via fine needle aspiration (FNA), it is a procedure wher
 
 # Code
 
-```{r setup, include=TRUE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=20, fig.height=10) 
 
-# Install the packages if they are not installed already
-knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Code, include=TRUE}
+
+
+
 
 # install the required packages if needed
 list.of.packages <- c("sqldf", "glmnet", "gfortran", "rgl", "CVST", "igraph", "recipes", "ggplot2", "caret", "forcats", "olsrr", "tidyr", "corrplot", "parallel", "doParallel", "mlbench" ,"pheatmap","RColorBrewer","rpart.plot")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, repos="http://cran.r-project.org")
 
+suppressMessages(suppressWarnings(library(sqldf))) # Used for manipulating the data frames using SQL
+suppressMessages(suppressWarnings(library(glmnet))) # Used for...
+suppressMessages(suppressWarnings(library(caret))) # Used for...
+suppressMessages(suppressWarnings(library(forcats))) # Used for...
+suppressMessages(suppressWarnings(library(olsrr))) # Used for creating the foward
+suppressMessages(suppressWarnings(library(MASS))) # Used for backward, and stepwise models
+suppressMessages(suppressWarnings(library(tidyr))) #Used for creating some of the plots
+suppressMessages(suppressWarnings(library(ggplot2))) #Used for creating some of the plots
+suppressMessages(suppressWarnings(library(corrplot))) #Used to create the correlation matrix
+suppressMessages(suppressWarnings(library(parallel))) #Using to assign more cores and allow parallel processing
+suppressMessages(suppressWarnings(library(doParallel))) #Using to assign more cores and allow parallel processing
+suppressMessages(suppressWarnings(library(mlbench))) #Contains the data set
+suppressMessages(suppressWarnings(library(pheatmap)))
+suppressMessages(suppressWarnings(library(RColorBrewer)))
+suppressMessages(suppressWarnings(library(rpart.plot)))
 
-library(sqldf) # Used for manipulating the data frames using SQL
-library(glmnet) # Used for...
-library(caret) # Used for...
-library(forcats) # Used for...
-library(olsrr) # Used for creating the foward
-library(MASS) # Used for backward, and stepwise models
-library(tidyr) #Used for creating some of the plots
-library(ggplot2) #Used for creating some of the plots
-library(corrplot) #Used to create the correlation matrix
-library(parallel) #Using to assign more cores and allow parallel processing
-library(doParallel) #Using to assign more cores and allow parallel processing
-library(mlbench) #Contains the data set
-library(pheatmap)
-library(RColorBrewer)
-library(rpart.plot)
 
 #Load in the data
 data("BreastCancer")
+
+
 
 
 class(BreastCancer$Cl.thickness)
@@ -96,9 +105,13 @@ BreastCancer$Bare.nuclei <- as.integer(BreastCancer$Bare.nuclei)
 mean(as.integer(BreastCancer$Bare.nuclei), na.rm = TRUE)
 
 BreastCancer$Bare.nuclei[is.na(BreastCancer$Bare.nuclei)] <- 3
+
+BreastCancer$Bare.nuclei <- as.factor(BreastCancer$Bare.nuclei)
   
 #Double Check
 sapply(BreastCancer, function(x) sum(is.na(x)))
+
+BreastCancer$Class <- 
 
 
 #Split the Data into train and test
@@ -119,6 +132,18 @@ xtrain <- train[,3:ncol(train)-1]
 ytrain <- train$Class
 
 
+#Checking to see the distribution of Class.  Recall that for a ROC curve that the distribution needs to be even for the target.  For instance, if cancer is 95% we can just predict everything as cancer and be close. 
+table(train$Class)
+
+#Looked up how to handle this and found downSample as the way to counter this. 
+'%ni%' <- Negate('%in%')
+
+down_train <- downSample(x = train[, colnames(train) %ni% "Class"], y = train$Class)
+
+table(down_train$Class)
+
+write.csv(export, file = "DownTrain.csv", row.names = FALSE)
+
 #Having trouble with the heatmap and need to lookup the error some more
 
 #x<-t(xtrain)
@@ -130,28 +155,49 @@ ytrain <- train$Class
 #Detect how many cores/clusters you have on your computer and subtract 1 for your OS and stuff
 #Shut some stuff down and save if you have stuff open! 
 
+
+
+
 cluster <- makeCluster(detectCores() - 1) 
 registerDoParallel(cluster)
 
-lasso.model <- lm(train$SalePrice ~ MSZoning + LotArea + OverallQual + YearBuilt + YearRemodAdd+
-          YearRemodAdd + BsmtFinType1 + BsmtFinSF1 + TotalBsmtSF + CentralAir +
-            X1stFlrSF + GrLivArea + BsmtFullBath + FireplaceQu + GarageType + GarageCars + GarageArea, data = xtrain[,-1])
 
+
+#Running models with all fields (random forest, decision_tree, maybe more?)
 
 fitControl <- trainControl(## 10-fold CV
                            method = "cv",
                            number = 10,
                            allowParallel = TRUE)
 
-glm_ <- train(Class ~ Age + ForeignWorker + Property.RealEstate + Housing.Own + 
-                   CreditHistory.Critical,  data=training, method="glm", family="binomial")
 
-model_random_forest = train(Class ~ ., data = train[,-1], method = "rf", trControl = fitControl)
 
-decision_tree = train(Class ~ ., data = train[,-1], method = "rpart", trControl = fitControl)
+#model_logistic_regression = train(Class ~., data = train[,-1], method = "glm")
 
-tree.2 <- rpart(decision_tree, train)
+logistic_regression <- glm(Class ~ Cell.shape, family = "binomial", data = downSample[,-1])
+
+plot(logistic_regression)
+
+model_random_forest = train(Class ~ ., data = downSample[,-1], method = "rf", trControl = fitControl)
+
+
+decision_tree = train(Class ~ ., data = downSample[,-1], method = "rpart", trControl = fitControl)
+
+tree.2 <- rpart(decision_tree, downSample)
 prp(tree.2)
+
+importance_rf <- varImp(model_random_forest, scale = FALSE)
+
+
+plot (
+    importance_rf, type="o",
+    xlab = "Importance",
+    ylab = "Features",
+    cex.axis = "2",
+    cex.lab = "2",
+    las = 1
+)
+
 
 
 
