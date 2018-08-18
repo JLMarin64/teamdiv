@@ -343,7 +343,6 @@ grid.arrange(p11, p12, p13, p14, p15, p16, p17, p18, p19, top="Distribution of c
 
 
 
-# Main Analysis
 
 ## Objective 1
 
@@ -442,18 +441,338 @@ Below are the Odds ratio (Fig 8.) with the 95% confidence interval, for the coef
 
 # Objective 2
 
-# Main Analysis Content
 
 Upon doing the Logistic Regression model for the Breast Cancer data set, we would like to evaluate other models such as Random Forect and Decision Trees to see if we can improve the predictability of the model. 
 
-A random forest model was created
+A decision tree model was created so that we can evaluate the trees much like how we did visually in objective 1.  
+
+```{r decision_tree_plot, echo = FALSE, include = TRUE}
+prp(tree.2)
+
+```
+
+Upon training the decision tree model, we predicted the values in the test set and displayed a confusion matrix to compare to the Logistic Regression model. Here we can see that the logistic regression model is still better with an accuracy of 95% while the decision tree had an accuracy of 91%.  
+
+```{r decisiontree, echo= FALSE, include = TRUE}
+
+confusionMatrix(dt_prediction, test$Class)
+
+```
+
+A random forest model was laso created and the feature importance was re-evaluated with the random forest algorithm.  
+
+Feature Importance:
+```{r random_forest, echo = FALSE, fig.width= 20, fig.height= 15}
+plot (
+    importance_rf, type="o",
+    xlab = "Importance",
+    ylab = "Features",
+    cex.axis = "2",
+    cex.lab = "2",
+    las = 1
+)
+
+```
+
+Upon training the model with all features to allow for ensembling, we predicted the test set with the random forest model and created a confusion matrix. We can see from the confusion matrix that we are more accurate with benign predictions where only 1 case was misdiagnosed.  However, the random forest model inaccurately predicts 1 more benign that was actually malignant.   treatment as this can be life saving. 
+
+```{r rf, echo = FALSE, include = TRUE}
+
+confusionMatrix(rf_prediction, test$Class)
 
 
+```
 # Conclusion
+Though the accuracy the Random Forest model is higher at almost 97%, at this point in time, it may be better to use the Logistic Regression model given that it is more important to predict malignant cases.  
 
 
 # Appendix
 
+```{r appendix, echo = TRUE, include=TRUE, fig.width= 20, fig.height= 30, warning= FALSE, message=FALSE}
+#Later going to add this in Appendix too and will hide this bit of code.  Just listing it first so I can call objects in RMarkdown. 
+
+#Turn off scientific notation. It is annoying. 
+options(scipen=999)
+
+
+# install the required packages if needed
+list.of.packages <- c("sqldf", "glmnet", "gfortran", "rgl", "CVST", "igraph", "recipes", "ggplot2", "caret", "forcats", "olsrr", "tidyr", "corrplot", "parallel", "doParallel", "mlbench" ,"pheatmap","RColorBrewer","rpart.plot", "gridExtra")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, repos="http://cran.r-project.org")
+
+library(sqldf) # Used for manipulating the data frames using SQL
+library(glmnet) # Used for...
+library(caret) # Used for...
+library(forcats) # Used for...
+library(olsrr) # Used for creating the foward
+library(MASS) # Used for backward, and stepwise models
+library(tidyr) #Used for creating some of the plots
+library(ggplot2) #Used for creating some of the plots
+library(corrplot) #Used to create the correlation matrix
+library(parallel) #Using to assign more cores and allow parallel processing
+library(doParallel) #Using to assign more cores and allow parallel processing
+library(mlbench) #Contains the data set
+library(pheatmap)
+library(RColorBrewer)
+library(gtable)
+library(grid)
+library(gridExtra)
+library(rpart.plot)
+
+#Load in the data
+data("BreastCancer")
+
+class(BreastCancer$Cl.thickness)
+class(BreastCancer$Cell.size)
+class(BreastCancer$Cell.shape)
+class(BreastCancer$Marg.adhesion)
+class(BreastCancer$Epith.c.size)
+class(BreastCancer$Bare.nuclei)
+class(BreastCancer$Bl.cromatin)
+class(BreastCancer$Normal.nucleoli)
+class(BreastCancer$Mitoses)
+
+BreastCancer$Cl.thickness <- as.numeric(BreastCancer$Cl.thickness)
+BreastCancer$Cell.size <- as.numeric(BreastCancer$Cell.size)
+BreastCancer$Cell.shape <- as.numeric(BreastCancer$Cell.shape)
+BreastCancer$Marg.adhesion<- as.numeric(BreastCancer$Marg.adhesion)
+BreastCancer$Epith.c.size<- as.numeric(BreastCancer$Epith.c.size)
+BreastCancer$Bare.nuclei<- as.numeric(BreastCancer$Bare.nuclei)
+BreastCancer$Bl.cromatin<- as.numeric(BreastCancer$Bl.cromatin)
+BreastCancer$Normal.nucleoli<- as.numeric(BreastCancer$Normal.nucleoli)
+BreastCancer$Mitoses<- as.numeric(BreastCancer$Mitoses)
+
+
+#Exploratory Analysis
+
+
+p1 <- ggplot(BreastCancer, aes(Cl.thickness, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell thickness")
+p2 <- ggplot(BreastCancer, aes(Cell.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell size")
+p3 <- ggplot(BreastCancer, aes(Cell.shape, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell shape")
+p4 <- ggplot(BreastCancer, aes(Marg.adhesion, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Marginal adhesion")
+p5 <- ggplot(BreastCancer, aes(Epith.c.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Single epithelial cell size")
+p6 <- ggplot(BreastCancer, aes(Bare.nuclei, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bare nuclei")
+p7 <- ggplot(BreastCancer, aes(Bl.cromatin, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bland cromatin")
+p8 <- ggplot(BreastCancer, aes(Normal.nucleoli, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Normal nuclei")
+p9 <- ggplot(BreastCancer, aes(Mitoses, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none")
+p10 <- ggplot(BreastCancer, aes(Class, fill=Class)) + geom_bar() + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position="right") + coord_flip() + labs(title="Overall counts of malignant and benign samples")
+lay <- rbind(c(1,2,3), c(1,2,3), c(4,5,6), c(4,5,6), c(7,8,9), c(7,8,9), c(10,10,10), c(10,10,10))
+
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+
+BreastCancer2 <- BreastCancer
+BreastCancer2$Cl.thickness <- as.character(BreastCancer2$Cl.thickness)
+BreastCancer2$Cell.size <- as.character(BreastCancer2$Cell.size)
+BreastCancer2$Cell.shape <- as.character(BreastCancer2$Cell.shape)
+BreastCancer2$Marg.adhesion<- as.character(BreastCancer2$Marg.adhesion)
+BreastCancer2$Epith.c.size<- as.character(BreastCancer2$Epith.c.size)
+BreastCancer2$Bare.nuclei<- as.character(BreastCancer2$Bare.nuclei)
+BreastCancer2$Bl.cromatin<- as.character(BreastCancer2$Bl.cromatin)
+BreastCancer2$Normal.nucleoli<- as.character(BreastCancer2$Normal.nucleoli)
+BreastCancer2$Mitoses<- as.character(BreastCancer2$Mitoses)
+#cutoff on Cl.thickness was made to be greater than or equal to 7
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "8"] <- "7"
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "9"] <- "7"
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "10"] <- "7"
+#cutoff on Cell.size 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "1"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "2"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "3"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "4"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "5"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "6"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "7"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "8"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "9"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "10"] <- "1"
+#cutoff on Cell.shape is greater than or euqal to 7 are grouped together as 7
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "8"] <- "7"
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "9"] <- "7"
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "10"] <- "7"
+#cutoff for Marg.adhesion is greater than or equal to 7 are groupted together as 7
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "8"] <- "7"
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "9"] <- "7"
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "10"] <- "7"
+#cutoff for Epith.c.size is split as 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "1"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "2"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "3"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "4"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "5"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "6"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "7"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "8"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "9"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "10"] <- "1"
+#cutoff for Bare.nuclei is greater than or equal to 6 are grouped together as 6
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "7"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "8"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "9"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "10"] <- "6"
+#cutoff for Bl.cromatin is split as 0 for levels 1 to 5, 1 for levels 6 to 10
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "1"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "2"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "3"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "4"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "5"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "6"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "7"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "8"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "9"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "10"] <- "1"
+#cutoff for Normal.nucleoli is greater than or equal to 7 are grouped together as 7
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "8"] <- "7"
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "9"] <- "7"
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "10"] <- "7"
+#cutoff for Mitoses is split as 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "1"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "2"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "3"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "4"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "5"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "6"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "7"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "8"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "9"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "10"] <- "1"
+BreastCancer2$Cl.thickness <- as.numeric(BreastCancer2$Cl.thickness)
+BreastCancer2$Cell.size <- as.numeric(BreastCancer2$Cell.size)
+BreastCancer2$Cell.shape <- as.numeric(BreastCancer2$Cell.shape)
+BreastCancer2$Marg.adhesion<- as.numeric(BreastCancer2$Marg.adhesion)
+BreastCancer2$Epith.c.size<- as.numeric(BreastCancer2$Epith.c.size)
+BreastCancer2$Bare.nuclei<- as.numeric(BreastCancer2$Bare.nuclei)
+BreastCancer2$Bl.cromatin<- as.numeric(BreastCancer2$Bl.cromatin)
+BreastCancer2$Normal.nucleoli<- as.numeric(BreastCancer2$Normal.nucleoli)
+BreastCancer2$Mitoses<- as.numeric(BreastCancer2$Mitoses)
+
+p11 <- ggplot(BreastCancer2, aes(Cl.thickness, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell thickness")
+p12 <- ggplot(BreastCancer2, aes(Cell.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell size") + scale_x_continuous(breaks=c(0, 1))
+p13 <- ggplot(BreastCancer2, aes(Cell.shape, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell shape")
+p14 <- ggplot(BreastCancer2, aes(Marg.adhesion, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Marginal adhesion")
+p15 <- ggplot(BreastCancer2, aes(Epith.c.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Single epithelial cell size") + scale_x_continuous(breaks=c(0, 1))
+p16 <- ggplot(BreastCancer2, aes(Bare.nuclei, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bare nuclei")
+p17 <- ggplot(BreastCancer2, aes(Bl.cromatin, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bland cromatin") + scale_x_continuous(breaks=c(0, 1))
+p18 <- ggplot(BreastCancer2, aes(Normal.nucleoli, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Normal nuclei")
+p19 <- ggplot(BreastCancer2, aes(Mitoses, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + scale_x_continuous(breaks=c(0, 1))
+lay2 <- rbind(c(1,2,3), c(1,2,3), c(4,5,6), c(4,5,6), c(7,8,9), c(7,8,9))
+grid.arrange(p11, p12, p13, p14, p15, p16, p17, p18, p19, top="Distribution of cancer after categorical factor compression", layout_matrix=lay2)
+
+
+
+# Set seed for reproducibility
+set.seed(0)
+
+#This shows us what is null
+sapply(BreastCancer, function(x) sum(is.na(x)))
+
+BreastCancer$Bare.nuclei <- as.integer(BreastCancer$Bare.nuclei)
+
+# use mean imputation to handle missing Bare.nuclei data.  Median was 1
+
+mean(as.integer(BreastCancer$Bare.nuclei), na.rm = TRUE)
+
+BreastCancer$Bare.nuclei[is.na(BreastCancer$Bare.nuclei)] <- 3
+
+BreastCancer$Bare.nuclei <- as.factor(BreastCancer$Bare.nuclei)
+  
+#Double Check
+sapply(BreastCancer, function(x) sum(is.na(x)))
+
+#Split the Data into train and test
+
+smp_size <- floor(.70* nrow(BreastCancer))
+
+train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
+
+train <- BreastCancer[train_ind,]
+test <- BreastCancer[-train_ind,]
+
+export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union select * from test) data")
+
+#Export for Jason so that we have the same train/test set between SAS and R
+write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
+
+
+
+#Checking to see the distribution of Class.  Recall that for a ROC curve that the distribution needs to be even for the target.  For instance, if cancer is 95% we can just predict everything as cancer and be close. 
+#table(train$Class)
+
+#Looked up how to handle this and found downSample as the way to counter this. 
+#'%ni%' <- Negate('%in%')
+
+#down_train <- downSample(x = train[, colnames(train) %ni% "Class"], y = train$Class)
+
+#table(down_train$Class)
+
+#write.csv(export, file = "DownTrain.csv", row.names = FALSE)
+
+#Having trouble with the heatmap and need to lookup the error some more
+
+
+
+#Detect how many cores/clusters you have on your computer and subtract 1 for your OS and stuff
+#Shut some stuff down and save if you have stuff open! 
+
+
+
+
+cluster <- makeCluster(detectCores() - 1) 
+registerDoParallel(cluster)
+
+
+
+
+fitControl <- trainControl(## 10-fold
+                           method = "boot",
+                           number = 10,
+                           allowParallel = TRUE)
+
+#model_logistic_regression = train(Class ~., data = train[,-1], method = "glm")
+
+#logistic_regression <- glm(Class ~ Cell.shape, family = "binomial", data = train[,-1])
+
+#plot(logistic_regression)
+
+
+#Random Forest Model
+model_random_forest <- train(Class ~ ., data = train[,-1], method = "rf", trControl = fitControl)
+
+
+#Decision Tree Model
+decision_tree <- train(Class ~ ., data = train[,-1], method = "rpart", trControl = fitControl)
+
+#Plot Decision Tree
+tree.2 <- rpart(decision_tree, train)
+prp(tree.2)
+
+#Feature Importance
+importance_rf <- varImp(model_random_forest, scale = FALSE)
+
+#Plotting the Feature Importance
+plot (
+    importance_rf, type="o",
+    xlab = "Importance",
+    ylab = "Features",
+    cex.axis = "2",
+    cex.lab = "2",
+    las = 1
+)
+
+
+#Predict the Random Forest Model on Test Set
+rf_prediction <- predict(model_random_forest, test)
+
+
+#Predict the Decision Tree Model on Test Set
+dt_prediction <- predict(decision_tree, test)
+
+#Display the Confusion Matrix for RF and Decision Tree
+
+confusionMatrix(rf_prediction, test$Class)
+
+confusionMatrix(dt_prediction, test$Class)
+
+```
 
 
 
