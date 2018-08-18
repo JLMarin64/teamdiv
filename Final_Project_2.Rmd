@@ -7,7 +7,7 @@ output: html_document
 
 ---
 
-```{r code, echo = TRUE, eval = TRUE, fig.width= 20, fig.height= 30}
+```{r code, echo = FALSE, eval = TRUE, include=FALSE, fig.width= 20, fig.height= 30, warning= FALSE, message=FALSE}
 #Later going to add this in Appendix too and will hide this bit of code.  Just listing it first so I can call objects in RMarkdown. 
 
 #Turn off scientific notation. It is annoying. 
@@ -51,6 +51,16 @@ class(BreastCancer$Bl.cromatin)
 class(BreastCancer$Normal.nucleoli)
 class(BreastCancer$Mitoses)
 
+BreastCancer$Cl.thickness <- as.numeric(BreastCancer$Cl.thickness)
+BreastCancer$Cell.size <- as.numeric(BreastCancer$Cell.size)
+BreastCancer$Cell.shape <- as.numeric(BreastCancer$Cell.shape)
+BreastCancer$Marg.adhesion<- as.numeric(BreastCancer$Marg.adhesion)
+BreastCancer$Epith.c.size<- as.numeric(BreastCancer$Epith.c.size)
+BreastCancer$Bare.nuclei<- as.numeric(BreastCancer$Bare.nuclei)
+BreastCancer$Bl.cromatin<- as.numeric(BreastCancer$Bl.cromatin)
+BreastCancer$Normal.nucleoli<- as.numeric(BreastCancer$Normal.nucleoli)
+BreastCancer$Mitoses<- as.numeric(BreastCancer$Mitoses)
+
 
 #Exploratory Analysis
 
@@ -59,27 +69,113 @@ p1 <- ggplot(BreastCancer, aes(Cl.thickness, fill=Class)) + geom_histogram(stat=
 p2 <- ggplot(BreastCancer, aes(Cell.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell size")
 p3 <- ggplot(BreastCancer, aes(Cell.shape, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell shape")
 p4 <- ggplot(BreastCancer, aes(Marg.adhesion, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Marginal adhesion")
-p5 <- ggplot(BreastCancer, aes(Epith.c.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Single Epithelial cell size")
+p5 <- ggplot(BreastCancer, aes(Epith.c.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Single epithelial cell size")
 p6 <- ggplot(BreastCancer, aes(Bare.nuclei, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bare nuclei")
-p7 <- ggplot(BreastCancer, aes(Bl.cromatin, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bland chromatin")
+p7 <- ggplot(BreastCancer, aes(Bl.cromatin, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bland cromatin")
 p8 <- ggplot(BreastCancer, aes(Normal.nucleoli, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Normal nuclei")
 p9 <- ggplot(BreastCancer, aes(Mitoses, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none")
-p10 <- ggplot(BreastCancer, aes(Class, fill=Class)) + geom_bar() + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark()
-
+p10 <- ggplot(BreastCancer, aes(Class, fill=Class)) + geom_bar() + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position="right") + coord_flip() + labs(title="Overall counts of malignant and benign samples")
+lay <- rbind(c(1,2,3), c(1,2,3), c(4,5,6), c(4,5,6), c(7,8,9), c(7,8,9), c(10,10,10), c(10,10,10))
 
 grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
 
+BreastCancer2 <- BreastCancer
+BreastCancer2$Cl.thickness <- as.character(BreastCancer2$Cl.thickness)
+BreastCancer2$Cell.size <- as.character(BreastCancer2$Cell.size)
+BreastCancer2$Cell.shape <- as.character(BreastCancer2$Cell.shape)
+BreastCancer2$Marg.adhesion<- as.character(BreastCancer2$Marg.adhesion)
+BreastCancer2$Epith.c.size<- as.character(BreastCancer2$Epith.c.size)
+BreastCancer2$Bare.nuclei<- as.character(BreastCancer2$Bare.nuclei)
+BreastCancer2$Bl.cromatin<- as.character(BreastCancer2$Bl.cromatin)
+BreastCancer2$Normal.nucleoli<- as.character(BreastCancer2$Normal.nucleoli)
+BreastCancer2$Mitoses<- as.character(BreastCancer2$Mitoses)
+#cutoff on Cl.thickness was made to be greater than or equal to 7
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "8"] <- "7"
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "9"] <- "7"
+BreastCancer2$Cl.thickness[BreastCancer2$Cl.thickness == "10"] <- "7"
+#cutoff on Cell.size 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "1"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "2"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "3"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "4"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "5"] <- "0"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "6"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "7"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "8"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "9"] <- "1"
+BreastCancer2$Cell.size[BreastCancer2$Cell.size == "10"] <- "1"
+#cutoff on Cell.shape is greater than or euqal to 7 are grouped together as 7
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "8"] <- "7"
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "9"] <- "7"
+BreastCancer2$Cell.shape[BreastCancer2$Cell.shape == "10"] <- "7"
+#cutoff for Marg.adhesion is greater than or equal to 7 are groupted together as 7
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "8"] <- "7"
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "9"] <- "7"
+BreastCancer2$Marg.adhesion[BreastCancer2$Marg.adhesion == "10"] <- "7"
+#cutoff for Epith.c.size is split as 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "1"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "2"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "3"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "4"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "5"] <- "0"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "6"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "7"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "8"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "9"] <- "1"
+BreastCancer2$Epith.c.size[BreastCancer2$Epith.c.size == "10"] <- "1"
+#cutoff for Bare.nuclei is greater than or equal to 6 are grouped together as 6
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "7"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "8"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "9"] <- "6"
+BreastCancer2$Bare.nuclei[BreastCancer2$Bare.nuclei == "10"] <- "6"
+#cutoff for Bl.cromatin is split as 0 for levels 1 to 5, 1 for levels 6 to 10
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "1"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "2"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "3"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "4"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "5"] <- "0"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "6"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "7"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "8"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "9"] <- "1"
+BreastCancer2$Bl.cromatin[BreastCancer2$Bl.cromatin == "10"] <- "1"
+#cutoff for Normal.nucleoli is greater than or equal to 7 are grouped together as 7
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "8"] <- "7"
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "9"] <- "7"
+BreastCancer2$Normal.nucleoli[BreastCancer2$Normal.nucleoli == "10"] <- "7"
+#cutoff for Mitoses is split as 0 for levels 1 to 5, and 1 for levels 6 to 10
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "1"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "2"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "3"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "4"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "5"] <- "0"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "6"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "7"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "8"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "9"] <- "1"
+BreastCancer2$Mitoses[BreastCancer2$Mitoses == "10"] <- "1"
+BreastCancer2$Cl.thickness <- as.numeric(BreastCancer2$Cl.thickness)
+BreastCancer2$Cell.size <- as.numeric(BreastCancer2$Cell.size)
+BreastCancer2$Cell.shape <- as.numeric(BreastCancer2$Cell.shape)
+BreastCancer2$Marg.adhesion<- as.numeric(BreastCancer2$Marg.adhesion)
+BreastCancer2$Epith.c.size<- as.numeric(BreastCancer2$Epith.c.size)
+BreastCancer2$Bare.nuclei<- as.numeric(BreastCancer2$Bare.nuclei)
+BreastCancer2$Bl.cromatin<- as.numeric(BreastCancer2$Bl.cromatin)
+BreastCancer2$Normal.nucleoli<- as.numeric(BreastCancer2$Normal.nucleoli)
+BreastCancer2$Mitoses<- as.numeric(BreastCancer2$Mitoses)
 
+p11 <- ggplot(BreastCancer2, aes(Cl.thickness, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell thickness")
+p12 <- ggplot(BreastCancer2, aes(Cell.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell size") + scale_x_continuous(breaks=c(0, 1))
+p13 <- ggplot(BreastCancer2, aes(Cell.shape, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Cell shape")
+p14 <- ggplot(BreastCancer2, aes(Marg.adhesion, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Marginal adhesion")
+p15 <- ggplot(BreastCancer2, aes(Epith.c.size, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Single epithelial cell size") + scale_x_continuous(breaks=c(0, 1))
+p16 <- ggplot(BreastCancer2, aes(Bare.nuclei, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bare nuclei")
+p17 <- ggplot(BreastCancer2, aes(Bl.cromatin, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Bland cromatin") + scale_x_continuous(breaks=c(0, 1))
+p18 <- ggplot(BreastCancer2, aes(Normal.nucleoli, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + labs(x="Normal nuclei")
+p19 <- ggplot(BreastCancer2, aes(Mitoses, fill=Class)) + geom_histogram(stat="count") + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position = "none") + scale_x_continuous(breaks=c(0, 1))
+lay2 <- rbind(c(1,2,3), c(1,2,3), c(4,5,6), c(4,5,6), c(7,8,9), c(7,8,9))
+grid.arrange(p11, p12, p13, p14, p15, p16, p17, p18, p19, top="Distribution of cancer after categorical factor compression", layout_matrix=lay2)
 
-#BreastCancer$Cl.thickness <- as.numeric(BreastCancer$Cl.thickness)
-#BreastCancer$Cell.size <- as.numeric(BreastCancer$Cell.size)
-#BreastCancer$Cell.shape <- as.numeric(BreastCancer$Cell.shape)
-#BreastCancer$Marg.adhesion<- as.numeric(BreastCancer$Marg.adhesion)
-#BreastCancer$Epith.c.size<- as.numeric(BreastCancer$Epith.c.size)
-#BreastCancer$Bare.nuclei<- as.numeric(BreastCancer$Bare.nuclei)
-#BreastCancer$Bl.cromatin<- as.numeric(BreastCancer$Bl.cromatin)
-#BreastCancer$Normal.nucleoli<- as.numeric(BreastCancer$Normal.nucleoli)
-#BreastCancer$Mitoses<- as.numeric(BreastCancer$Mitoses)
 
 
 # Set seed for reproducibility
@@ -224,25 +320,103 @@ Biopsies were collected via fine needle aspiration (FNA), it is a procedure wher
 
 # Exploratory Analysis
 
-``` {r exploratory, message = FALSE, warning = FALSE, eval = TRUE, echo = FALSE}
+
+```{r hist1, eval = TRUE, echo = FALSE, warning= FALSE, message= FALSE}
+
+
 grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+
+```
+
+After intially viewing the data in histograms to determine the distribution of each score (1-10, categorical) of every cytological characteristic we noted the expected trend of the higher grades equating to higher rate of malignancy. Judging visually the histograms above we saw a vast majority of grades above a certain level per variable resulted in a malignant sample. Because of this and to simplify the interpretation of the logistic regression model we grouped scores based visually on the overwhelming ratio of malignant to benign results.
+
+
+Groupings were made on cell shape, cell thickness, marginal adhesion, and normal nuclei to grades that were greater than or equal to 7 were grouped as 7. Bare nuclei's grades were grouped as greater than or equal to 6 were grouped as 6. Lastly, binary groupings (0, 1) were made for bland chromatin, cell size, single epithelial cell size, and mitosis. Again, these groupings were done to help with simplifying the interpration of the logistic regression model while leaving the factors as categorical rather than continuous.
+
+``` {r hist2, message = FALSE, warning = FALSE, eval = TRUE, echo = FALSE}
+
+
+grid.arrange(p11, p12, p13, p14, p15, p16, p17, p18, p19, top="Distribution of cancer after categorical factor compression", layout_matrix=lay2)
 
 
 ```
 
+
+
 # Main Analysis
 
-# Objective 1
+## Objective 1
 
-## Restate Problem
+## Problem
+The objective is to identify each of a number of benign or malignant classes through Logistic Regression and feature selection. 
 
 ## Model Selection
+In determining the logistic regression model, model selection technique is used to first create a base model. The main techniques used to determine the base model are backward, forward, and stepwise techniques. Since there are 9 explanatory variables, it is determined to use all the variables in the determination of the model. Also, there are 691 observations in the dataset, and so it is determined to create a training dataset and a testing dataset, where we kept 505 observations for training and 186 for testing that were randomly chosen without replacement. There are also missing values in the Bare.nuclei variable, since there only 16 observations that are missing it is determined to use the mean as the replacement because it should not influence the overall distribution of the variables with such a small amount missing. 
 
-## Assumptions for Logistic Regression
+All three techniques reached the same conclusion for the final model in determining what factors indicate malignancy. The factors that entered the model for the model selection techniques are the following: Bare.nuclei, Bl.cromatin, Cell.shape, Cell.size, and Cl.thickness. When looking at the pseudo General F-test (Fig 1.), testing between intercept only and full model, the evidence shows that at least one explanatory variable explains cancer at the 99% significance level.
+
+
+
+![Fig 1.](Img1.jpg)
+
+
+When looking at the statistical significance (Fig 2.) of the variables in the model, majority of the factors are significant at the 95% confidence level indicating that there is evidence that majority of the factors are statistically different from zero. From a practical vs. statistical significance, since there are only 505 observations used in the model, it is not determined to cause over sensitivity of the tests and can take the statistical results as is. 
+
+
+![Fig 2.](Img2.jpg)
+
+
+The testing dataset is also used to create a confusion matrix (Fig 3.) to see the overall accuracy of the model. The results are shown below.
+
+![Fig 3.](Img3.jpg)
+
+As seen in the results, the overall accuracy is high where we correctly determine benign by 95% and malignant by 88% using 0.5 as the cut off point for malignant. It seems that the model classifies the test set well enough with high accuracy.
+
+However, when looking at the test for goodness of fit determined by Hosmer-Lemmeshow, the test indicates a different conclusion. The test is significant at the 99% significance level, indicating evidence that the model is not of good fit. Therefore, based on the conclusions of all the statistics it is determined to see if there is a better model fit using the model selection technique model as the base.
+	
+In the base model, there is some multicollinearity concern between the variables Cell.Shape, Cell.Size, and Cl.thickness. Intuitively, the three measures seem to be correlated since they all are looking at the same cell but at different characteristics. Cell.Shape and Cell.Size are looking at the uniformity of the corresponding characteristic and so intuitively should follow the same trend where a higher number indicate highly irregular shape which means irregular sizes. Cl.thickness is looking at how much the epithelial cells overlap each other, and so increased thickness indicates malignancy. This could be correlated with Cell.Shape and Cell.Size since it highly possible having both of these characteristic can lead to Cl.thickness since clumping of cells could indicate differing shape and sizes. Therefore, looking through the 9 variables, Marg.adhesion is used as a substitute for Cell.Size and Cl.thickness to help get rid of multicollinearity. Marg.adhesion is measuring how much the epithelial cells tightly bind to one another and if lose tend to move around the body. Therefore, if they are tightly bind to each other, Cl.thickness should be lower because can't overlap each other and Cell.Size should be uniform since these are tightly bound to another.
+	
+Therefore, using this information a intuition model is created with the following factors: Bare.nuclei, Bl.cromatin, Cell.shape, and Marg.adhesion. When looking at the pseudo General F test, all are significant at the 99% significance level, indicating evidence that at least one variable in the model explains malignancy, see results below.
+	
+![Fig 4.](Img4.jpg)
+
+When comparing the base model (Fig 5.) with the intuition model (Fig 6.), the AIC and SC are used to compare. AIC and SC are used as measurement of error, and therefore a lower AIC and SC indicates a better fit. 
+
+![Fig 5.](Img5.jpg)
+
+
+![Fig 6.](Img11.jpg)
+
+When looking at the two results, the base model has AIC and SC of 111.564 and 196.055 respectively and the intuition model has AIC and SC of 134.663 and 214.930. Based on this criterion alone, it seems to show the base model has a better fit. Below in Fig.7 we have the parameter estimates for the base model. 
+
+![Fig 7.](Img6.jpg)
+
+When looking at the test statistic for the factors having slopes statistically different from zero for the intuition model, see results above, majority of the variables are significant with maybe the base model having slightly more variables that are significant in comparison. When looking at the confusion matrix (Fig 8.), the fit is slightly better than the base model depending on what Class is used for accuracy, where accuracy of predicting benign is 96% and malignant is 85%. 
+
+![Fig 8.](Img7.jpg)
+
+However, when looking at the Goodness of fit test for Hosmer-Lemmeshow for the intuition model, it is found to be statistically insignificant with a p-value of 0.1382. This indicates that there is evidence the intuition model has good fit overall.
+
+Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem to explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
+
+Below are the Odds ratio (Fig 9.) with the 95% confidence interval, for the coefficients estimate of the intuition model. 
+
+![Fig 9.](Img8.jpg)
+
 
 ## Influential Point Analysis 
+When looking at the leverage graph (Fig 9.) of the influence diagnostics, the Deviance Residual does show some concern in term of values reaching to the -3. However, when looking at the leverage graph, it does seem to show majority of the value below 0.4, indicating there is a little concern of influential points.
 
-## Final Conclusion from Objective 1
+![Fig 9.](Img10.jpg)
+
+## Objective 1 Conclusion
+
+Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem to explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
+Below are the Odds ratio with the 95% confidence interval, for the coefficients estimate of the intuition model. 
+
+Below are the Odds ratio (Fig 8.) with the 95% confidence interval, for the coefficients estimate of the intuition model. 
+
+![Fig 8.](Img9.jpg)
 
 # Objective 2
 
