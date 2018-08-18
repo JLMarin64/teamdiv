@@ -403,6 +403,28 @@ Below are the Odds ratio (Fig 9.) with the 95% confidence interval, for the coef
 
 ![Fig 9.](Img8.jpg)
 
+The following are the interpretations of the coefficients:
+
+*	When comparing Bare.nuclei level 1 vs level 6, level 1 odds will change by a multiplicative factor of 0.012 with a 95% confidence interval of 0.002 to 0.066 when compared to level 6.
+*	When comparing Bare.nuclei level 2 vs level 6, level 2 odds will change by a multiplicative factor of 0.157 with a 95% confidence interval of 0.018 to 1.371 when compared to level 6.
+*	When comparing Bare.nuclei level 3 vs level 6, level 3 odds will change by a multiplicative factor of 0.025 with a 95% confidence interval of 0.004 to 0.165 when compared to level 6.
+*	When comparing Bare.nuclei level 4 vs level 6, level 3 odds will change by a multiplicative factor of 0.345 with a 95% confidence interval of 0.028 to 4.186 when compared to level 6.
+*	When comparing Bare.nuclei level 5 vs level 6, level 3 odds will change by a multiplicative factor of 0.049 with a 95% confidence interval of 0.005 to 0.492 when compared to level 6.
+*	When comparing Bl.cromatin 0 (low range) vs 1 (high range), 0 (low range) odds will change by a multiplicative factor of 0.175 with a 95% confidence interval of 0.037 to 0.828 when compared to 1 (high range).
+*	When comparing Cell.shape level 1 vs level 7, level 1 odds will change by a multiplicative factor of 0.005 with a 95% confidence interval of <0.001 to 0.086 when compared to level 7.
+*	When comparing Cell.shape level 2 vs level 7, level 2 odds will change by a multiplicative factor of 0.034 with a 95% confidence interval of 0.003 to 0.371 when compared to level 7.
+*	When comparing Cell.shape level 3 vs level 7, level 3 odds will change by a multiplicative factor of 0.095 with a 95% confidence interval of 0.013 to 0.715 when compared to level 7.
+*	When comparing Cell.shape level 4 vs level 7, level 4 odds will change by a multiplicative factor of 0.486 with a 95% confidence interval of 0.063 to 3.770 when compared to level 7.
+*	When comparing Cell.shape level 5 vs level 7, level 5 odds will change by a multiplicative factor of 2.060 with a 95% confidence interval of 0.201 to 21.102 when compared to level 7.
+*	When comparing Cell.shape level 6 vs level 7, level 6 odds will change by a multiplicative factor of 1.002 with a 95% confidence interval of 0.055 to 18.210 when compared to level 7.
+*	When comparing Marg.adhesion level 1 vs level 7, level 1 odds will change by a multiplicative factor of 0.048 with a 95% confidence interval of 0.005 to 0.489 when compared to level 7.
+*	When comparing Marg.adhesion level 2 vs level 7, level 2 odds will change by a multiplicative factor of 0.066 with a 95% confidence interval of 0.004 to 1.053 when compared to level 7.
+*	When comparing Marg.adhesion level 3 vs level 7, level 3 odds will change by a multiplicative factor of 0.026 with a 95% confidence interval of 0.002 to 0.390 when compared to level 7.
+* When comparing Marg.adhesion level 4 vs level 7, level 4 odds will change by a multiplicative factor of 0.189 with a 95% confidence interval of 0.012 to 3.106 when compared to level 7.
+*	When comparing Marg.adhesion level 5 vs level 7, level 5 odds will change by a multiplicative factor of 0.014 with a 95% confidence interval of <0.001 to 0.228 when compared to level 7.
+*	When comparing Marg.adhesion level 6 vs level 7, level 6 odds will change by a multiplicative factor of 0.091 with a 95% confidence interval of 0.004 to 2.224 when compared to level 7.
+
+
 
 ## Influential Point Analysis 
 When looking at the leverage graph (Fig 9.) of the influence diagnostics, the Deviance Residual does show some concern in term of values reaching to the -3. However, when looking at the leverage graph, it does seem to show majority of the value below 0.4, indicating there is a little concern of influential points.
@@ -421,6 +443,11 @@ Below are the Odds ratio (Fig 8.) with the 95% confidence interval, for the coef
 # Objective 2
 
 # Main Analysis Content
+
+Upon doing the Logistic Regression model for the Breast Cancer data set, we would like to evaluate other models such as Random Forect and Decision Trees to see if we can improve the predictability of the model. 
+
+A random forest model was created
+
 
 # Conclusion
 
