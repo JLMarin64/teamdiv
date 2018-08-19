@@ -206,11 +206,11 @@ train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
 train <- BreastCancer[train_ind,]
 test <- BreastCancer[-train_ind,]
 
-export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union all select * from test) data")
+#export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union all #select * from test) data")
 
 #Export for Jason so that we have the same train/test set between SAS and R
-write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
-
+write.csv(train, file = "train.csv", row.names = FALSE)
+write.csv(test, file = "test.csv", row.names = FALSE)
 
 
 #Checking to see the distribution of Class.  Recall that for a ROC curve that the distribution needs to be even for the target.  For instance, if cancer is 95% we can just predict everything as cancer and be close. 
