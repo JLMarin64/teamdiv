@@ -206,11 +206,14 @@ train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
 train <- BreastCancer[train_ind,]
 test <- BreastCancer[-train_ind,]
 
-#export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union all #select * from test) data")
+export <- sqldf("select *, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from BreastCancer")
 
 #Export for Jason so that we have the same train/test set between SAS and R
-write.csv(train, file = "train.csv", row.names = FALSE)
-write.csv(test, file = "test.csv", row.names = FALSE)
+write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
+
+train <- read.csv(file = "train.csv", header = TRUE)
+test <- read.csv(file = "test.csv", header = TRUE)
+
 
 
 #Checking to see the distribution of Class.  Recall that for a ROC curve that the distribution needs to be even for the target.  For instance, if cancer is 95% we can just predict everything as cancer and be close. 
@@ -239,12 +242,15 @@ cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
 
 
-
+seeds <- vector(mode = "list", length = 11)
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 54)
+#for the last model
+seeds[[11]]<-sample.int(1000, 1)
 
 fitControl <- trainControl(## 10-fold
                            method = "boot",
                            number = 10,
-                           allowParallel = TRUE)
+                           allowParallel = TRUE, seeds=seeds)
 
 #model_logistic_regression = train(Class ~., data = train[,-1], method = "glm")
 
@@ -488,29 +494,32 @@ confusionMatrix(rf_prediction, test$Class)
 ```
 # Conclusion
 
-The Random Forest model is the most accurate model predicting 
-
-False positives (FP): We predicted yes, but they don't actually have the disease. (Also known as a "Type I error.")false negatives (FN): We predicted no, but they actually do have the disease. (Also known as a "Type II error.")
-
-
-Model | Measurement | Value
---------|---------|
-Random Forest|  Accuracy |95.71%
-Decision Tree|  Accuracy | 95%
-Logistic Regression|Accuracy | 91%
-Random Forest | Sensitivity | 99.24%
-Decision Tree |Sensitivity | 90.84
-Logistic Regression |Sensitivity | 90.6%
-Random Forest | Specificity | 92.41%
-Decision Tree | Specificity | 92.41%
-Logistic Regression | Specificity | 94.1%
+Model|Measurement|Value
+--------|---------|--------------|
+Random Forest|Accuracy|97.31%
+Decision Tree|Accuracy| 90.32%
+Logistic Regression|Accuracy| 91%
+Random Forest |Sensitivity |99.24%
+Decision Tree |Sensitivity |90.84%
+Logistic Regression|Sensitivity|90.6%
+Random Forest |Specificity|92.41%
+Decision Tree |Specificity|92.41%
+Logistic Regression |Specificity|94.1%
 
 
+The random forest model is the most accurate model with an accuracy of 97.31%, sensitivity of 99.24%, and a specificity of 92.41%, though the logistic regression model does have a slightly better specificity. 
+
+For false positives (Type 1), we predicted yes, but they don't actually have the disease. Which is not as severe as predicing false negatives (Type 2) whereas someone has the disease, but we predicted that they do not have it. 
 
 
-# Appendix
 
-```{r appendix, echo = TRUE, include=TRUE, fig.width= 20, fig.height= 30, warning= FALSE, message=FALSE}
+
+
+
+
+# R Appendix
+
+```{r Appendix, echo = TRUE, eval = TRUE, include=TRUE, fig.width= 20, fig.height= 30, warning= FALSE, message=FALSE}
 #Later going to add this in Appendix too and will hide this bit of code.  Just listing it first so I can call objects in RMarkdown. 
 
 #Turn off scientific notation. It is annoying. 
@@ -709,10 +718,13 @@ train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
 train <- BreastCancer[train_ind,]
 test <- BreastCancer[-train_ind,]
 
-export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union select * from test) data")
+export <- sqldf("select *, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from BreastCancer")
 
 #Export for Jason so that we have the same train/test set between SAS and R
 write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
+
+train <- read.csv(file = "train.csv", header = TRUE)
+test <- read.csv(file = "test.csv", header = TRUE)
 
 
 
@@ -742,12 +754,15 @@ cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
 
 
-
+seeds <- vector(mode = "list", length = 11)
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 54)
+#for the last model
+seeds[[11]]<-sample.int(1000, 1)
 
 fitControl <- trainControl(## 10-fold
                            method = "boot",
                            number = 10,
-                           allowParallel = TRUE)
+                           allowParallel = TRUE, seeds=seeds)
 
 #model_logistic_regression = train(Class ~., data = train[,-1], method = "glm")
 
@@ -794,7 +809,413 @@ confusionMatrix(rf_prediction, test$Class)
 
 confusionMatrix(dt_prediction, test$Class)
 
+
 ```
 
 
-
+# SAS Appendix
+  
+  FILENAME REFFILE '/home/jglin0/sasuser.v94/Project2/TrainAndTestData.csv';
+  PROC IMPORT DATAFILE=REFFILE
+      DBMS=CSV
+      replace
+      OUT=WORK.trainandtestdata;
+      GETNAMES=YES;
+  RUN;
+  data raw_data;
+  set trainandtestdata;
+  run;
+  proc means data=raw_data min max nmiss;
+  var 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n ;
+  run;
+  data train;
+  set raw_data;
+  if train_ind = 1;
+  run;
+  data test;
+  set raw_data;
+  if train_ind = 0;
+  run;
+  /*data train;*/
+  /*set train;*/
+  /*if 'Bare.nuclei'n = . then 'Bare.nuclei'n = mean('Bare.nuclei'n);*/
+  /*run;*/
+  /*proc means data=train nmiss;*/
+  /*run;*/
+  proc contents data=train;
+  run;
+  /******************************************************************************************************************************************************/;
+  /*Bare Nuceli*/;
+  DATA dummy_barenuclei;
+    set train;
+    ARRAY dummys {*} 3.  b_1 - b_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Bare.nuclei'n  ) = 1;        
+  RUN;
+  proc means data=dummy_barenuclei;
+  class Class;
+  var b_1-b_10;
+  run;
+  /*Bare Nuceli*/;
+  /*BI.cromatin*/
+  DATA dummy_bi_cromatin;
+    set train;
+    ARRAY dummys {*} 3.  bc_1 - bc_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Bl.cromatin'n  ) = 1;        
+  RUN;
+  proc means data=dummy_bi_cromatin;
+  class Class;
+  var bc_1-bc_10;
+  run;
+  /*BI.cromatin*/;
+  /*Cell Shape*/
+  DATA dummy_cell_shape;
+    set train;
+    ARRAY dummys {*} 3.  cs_1 - cs_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Cell.shape'n  ) = 1;     
+  RUN;
+  proc means data=dummy_cell_shape;
+  class Class;
+  var cs_1-cs_10;
+  run;
+  /*Cell Shape*/;
+  /*Cell Size*/
+  DATA dummy_cell_size;
+    set train;
+    ARRAY dummys {*} 3.  cz_1 - cz_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Cell.size'n  ) = 1;      
+  RUN;
+  proc means data=dummy_cell_size;
+  class Class;
+  var cz_1-cz_10;
+  run;
+  /*Cell Size*/;
+  /*CI Thickness*/
+  DATA dummy_cell_thick;
+    set train;
+    ARRAY dummys {*} 3.  ct_1 - ct_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Cl.thickness'n  ) = 1;       
+  RUN;
+  proc means data=dummy_cell_thick;
+  class Class;
+  var ct_1-ct_10;
+  run;
+  /*CI Thickness*/;
+  /* Epith Size*/
+  DATA dummy_epith_size;
+    set train;
+    ARRAY dummys {*} 3.  es_1 - es_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Epith.c.size'n  ) = 1;       
+  RUN;
+  proc means data=dummy_epith_size;
+  class Class;
+  var es_1-es_10;
+  run;
+  /* Epith Size*/;
+  /*Marg Adhesion*/
+  DATA dummy_marg_ad;
+    set train;
+    ARRAY dummys {*} 3.  ma_1 - ma_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Marg.adhesion'n  ) = 1;      
+  RUN;
+  proc means data=dummy_marg_ad;
+  class Class;
+  var ma_1-ma_10;
+  run;
+  /*Marg Adhesion*/;
+  /*Mitoses*/
+  DATA dummy_mitoses;
+    set train;
+    ARRAY dummys {*} 3.  mit_1 - mit_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Mitoses'n  ) = 1;        
+  RUN;
+  proc means data=dummy_mitoses;
+  class Class;
+  var mit_1-mit_10;
+  run;
+  /*Mitoses*/;
+  /*Normal Nucleoli*/
+  DATA dummy_nucleoli;
+    set train;
+    ARRAY dummys {*} 3.  nn_1 - nn_10;
+    DO i=1 TO 10;               
+     dummys(i) = 0;
+    END;
+    dummys( 'Normal.nucleoli'n  ) = 1;        
+  RUN;
+  proc means data=dummy_nucleoli;
+  class Class;
+  var nn_1-nn_10;
+  run;
+  /*Normal Nucleoli*/;
+  data pull;
+  set train;
+  run;
+  data final_train;
+  set train;
+  if 'Bare.nuclei'n >= 6 then 'Bare.nuclei'n = 6;
+  if 'Bl.cromatin'n <= 5 then 'Bl.cromatin'n = 0; else 'Bl.cromatin'n = 1;
+  if 'Cell.size'n <= 5 then 'Cell.size'n = 0; else 'Cell.size'n =1;
+  if 'Cell.shape'n >= 7 then 'Cell.shape'n = 7; 
+  if 'Cl.thickness'n >= 7 then 'Cl.thickness'n = 7;
+  if 'Epith.c.size'n <=5 then 'Epith.c.size'n = 0; else 'Epith.c.size'n =1;
+  if 'Marg.adhesion'n >=7 then 'Marg.adhesion'n =7;
+  if 'Mitoses'n <=5 then 'Mitoses'n = 0; else 'Mitoses'n = 1;
+  if 'Normal.nucleoli'n >=7 then 'Normal.nucleoli'n = 7;
+  run;
+  proc means data=final_train n nmiss min max;
+  var 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n ;
+  run;
+  /* Bare Nuceli*/; */
+  /* DATA dummy_barenuclei; */
+  /*   set final_train; */
+  /*   ARRAY dummys {*} 3.  b_1 - b_10; */
+  /*   DO i=1 TO 10;                 */
+  /*    dummys(i) = 0; */
+  /*   END; */
+  /*   dummys( 'Bare.nuclei'n  ) = 1;      */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_barenuclei; */
+  /* class Class; */
+  /* var b_1-b_10; */
+  /* run; */
+  /* Bare Nuceli*/; */
+  /*  */
+  /* BI.cromatin */
+  /* DATA dummy_bi_cromatin; */
+  /*  set final_train; */
+  /*  ARRAY dummys {*} 3.  bc_1 - bc_10; */
+  /*  DO i=1 TO 10;                 */
+  /*   dummys(i) = 0; */
+  /*  END; */
+  /*  dummys( 'Bl.cromatin'n  ) = 1;       */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_bi_cromatin; */
+  /* class Class; */
+  /* var bc_1-bc_10; */
+  /* run; */
+  /* proc means data=final_train; */
+  /* class Class; */
+  /* var 'Bl.cromatin'n; */
+  /* run; */
+  /* BI.cromatin*/; */
+  /* Cell Shape */
+  /* DATA dummy_cell_shape; */
+  /*   set final_train; */
+  /*   ARRAY dummys {*} 3.  cs_1 - cs_10; */
+  /*   DO i=1 TO 10;                 */
+  /*    dummys(i) = 0; */
+  /*   END; */
+  /*   dummys( 'Cell.shape'n  ) = 1;       */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_cell_shape; */
+  /* class Class; */
+  /* var cs_1-cs_10; */
+  /* run; */
+  /* Cell Shape*/; */
+  /*  */
+  /* Cell Size */
+  /* DATA dummy_cell_size; */
+  /*  set final_train; */
+  /*  ARRAY dummys {*} 3.  cz_1 - cz_2; */
+  /*  DO i=1 TO 10;                 */
+  /*   dummys(i) = 0; */
+  /*  END; */
+  /*  dummys( 'Cell.size'n  ) = 1;         */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_cell_size; */
+  /* class Class; */
+  /* var cz_1-cz_2; */
+  /* run; */
+  /*  */
+  /* proc means data=Final_train; */
+  /* class Class; */
+  /* var 'Cell.size'n; */
+  /* run; */
+  /* Cell Size*/; */
+  /*  */
+  /*  */
+  /* CI Thickness */
+  /* DATA dummy_cell_thick; */
+  /*   set final_train; */
+  /*   ARRAY dummys {*} 3.  ct_1 - ct_10; */
+  /*   DO i=1 TO 10;                 */
+  /*    dummys(i) = 0; */
+  /*   END; */
+  /*   dummys( 'Cl.thickness'n  ) = 1;         */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_cell_thick; */
+  /* class Class; */
+  /* var ct_1-ct_10; */
+  /* run; */
+  /* CI Thickness*/; */
+  /*  */
+  /* Epith Size */
+  /* DATA dummy_epith_size; */
+  /*  set final_train; */
+  /*  ARRAY dummys {*} 3.  es_1 - es_2; */
+  /*  DO i=1 TO 10;                 */
+  /*   dummys(i) = 0; */
+  /*  END; */
+  /*  dummys( 'Epith.c.size'n  ) = 1;      */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=Final_train; */
+  /* class Class; */
+  /* var 'Epith.c.size'n; */
+  /* run; */
+  /* Epith Size*/; */
+  /*  */
+  /* Marg Adhesion */
+  /* DATA dummy_marg_ad; */
+  /*   set final_train; */
+  /*   ARRAY dummys {*} 3.  ma_1 - ma_10; */
+  /*   DO i=1 TO 10;                 */
+  /*    dummys(i) = 0; */
+  /*   END; */
+  /*   dummys( 'Marg.adhesion'n  ) = 1;        */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_marg_ad; */
+  /* class Class; */
+  /* var ma_1-ma_10; */
+  /* run; */
+  /* Marg Adhesion*/; */
+  /*  */
+  /* Mitoses */
+  /* DATA dummy_mitoses; */
+  /*  set final_train; */
+  /*  ARRAY dummys {*} 3.  mit_1 - mit_10; */
+  /*  DO i=1 TO 10;                 */
+  /*   dummys(i) = 0; */
+  /*  END; */
+  /*  dummys( 'Marg.adhesion'n  ) = 1;         */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_mitoses; */
+  /* class Class; */
+  /* var mit_1-mit_10; */
+  /* run; */
+  /* proc means data=final_train; */
+  /* class Class; */
+  /* var mitoses; */
+  /* run; */
+  /*  */
+  /*  */
+  /* Mitoses*/; */
+  /*  */
+  /* Normal Nucleoli */
+  /* DATA dummy_mitoses; */
+  /*   set final_train; */
+  /*   ARRAY dummys {*} 3.  nn_1 - nn_10; */
+  /*   DO i=1 TO 10;                 */
+  /*    dummys(i) = 0; */
+  /*   END; */
+  /*   dummys( 'Normal.nucleoli'n  ) = 1;      */
+  /* RUN; */
+  /*  */
+  /*  */
+  /* proc means data=dummy_mitoses; */
+  /* class Class; */
+  /* var nn_1-nn_10; */
+  /* run; */
+  /* Normal Nucleoli*/; */
+  /*  */
+  /* options mlogic symbolgen; */
+  /* proc contents data=final_train out=names; */
+  /* run; */
+  /* proc sql; */
+  /* select  name into: cancervars separated by " " from names  where (name ne "VAR1" and name ne "Class" and name ne "Id" and name ne "Train_Ind"); */
+  /* quit; */
+  %put &cancervars;
+  proc logistic data=final_train;
+  class 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n /param=ref;
+  model Class(event='malignant')= 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n
+  / selection=stepwise scale=none details influence lackfit;
+  run;
+  proc logistic data=final_train;
+  class 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n /param=ref;
+  model Class(event='malignant')= 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n
+  / selection=forward scale=none details influence lackfit;
+  run;
+  proc logistic data=final_train;
+  class 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n /param=ref;
+  model Class(event='malignant')= 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n
+  / selection=backward scale=none details influence lackfit;
+  run;
+  /****Model Selection Final*****/;
+  proc logistic data=final_train outmodel=cancer_model;
+  class 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n /param=ref;
+        model Class(event='malignant')= 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n
+        /scale=none details influence lackfit;;
+     run;
+  /************************/; 
+  /**********Chosen Final Model*********/;  
+     proc logistic data=final_train outmodel=cancer_model2;
+  class 'Bare.nuclei'n 'Bl.cromatin'n 'Cell.shape'n 'Cell.size'n 'Cl.thickness'n 'Epith.c.size'n 'Marg.adhesion'n Mitoses 'Normal.nucleoli'n /param=ref;
+        model Class(event='malignant')= 'Bare.nuclei'n  'Bl.cromatin'n 'Cell.shape'n  'Marg.adhesion'n  
+        /scale=none details influence lackfit;;
+     run;
+  /***********************************/;
+     
+  data clean_test;
+  set test;
+  if 'Bare.nuclei'n >= 6 then 'Bare.nuclei'n = 6;
+  if 'Bl.cromatin'n <= 5 then 'Bl.cromatin'n = 0; else 'Bl.cromatin'n = 1;
+  if 'Cell.size'n <= 5 then 'Cell.size'n = 0; else 'Cell.size'n =1;
+  if 'Cell.shape'n >= 7 then 'Cell.shape'n = 7; 
+  if 'Cl.thickness'n >= 7 then 'Cl.thickness'n = 7;
+  if 'Epith.c.size'n <=5 then 'Epith.c.size'n = 0; else 'Epith.c.size'n =1;
+  if 'Marg.adhesion'n >=7 then 'Marg.adhesion'n =7;
+  if 'Mitoses'n <=5 then 'Mitoses'n = 0; else 'Mitoses'n = 1;
+  if 'Normal.nucleoli'n >=7 then 'Normal.nucleoli'n = 7;
+  run;
+  proc logistic inmodel=cancer_model;
+        score data=clean_test out=Scored_test;
+     run;
+   proc freq data=Scored_test; 
+        table F_class*I_Class / nocol nocum nopercent; 
+     run;
+  /******Final Model***********/;   
+  proc logistic inmodel=cancer_model2;
+        score data=clean_test out=Scored_test2;
+     run;
+   proc freq data=Scored_test2; 
+        table F_class*I_Class / nocol nocum nopercent; 
+     run;
