@@ -206,7 +206,7 @@ train_ind <- sample(seq_len(nrow(BreastCancer)), size = smp_size)
 train <- BreastCancer[train_ind,]
 test <- BreastCancer[-train_ind,]
 
-export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union select * from test) data")
+export <- sqldf(" select data.*, case when Id in (select Id from train) then 1 else 0 end as 'Train_Ind' from (select * from train union all select * from test) data")
 
 #Export for Jason so that we have the same train/test set between SAS and R
 write.csv(export, file = "TrainAndTestData.csv", row.names = FALSE)
@@ -331,7 +331,8 @@ grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
 After intially viewing the data in histograms to determine the distribution of each score (1-10, categorical) of every cytological characteristic we noted the expected trend of the higher grades equating to higher rate of malignancy. Judging visually the histograms above we saw a vast majority of grades above a certain level per variable resulted in a malignant sample. Because of this and to simplify the interpretation of the logistic regression model we grouped scores based visually on the overwhelming ratio of malignant to benign results.
 
 
-Groupings were made on cell shape, cell thickness, marginal adhesion, and normal nuclei to grades that were greater than or equal to 7 were grouped as 7. Bare nuclei's grades were grouped as greater than or equal to 6 were grouped as 6. Lastly, binary groupings (0, 1) were made for bland chromatin, cell size, single epithelial cell size, and mitosis. Again, these groupings were done to help with simplifying the interpration of the logistic regression model while leaving the factors as categorical rather than continuous.
+
+Groupings were made on cell shape, cell thickness, marginal adhesion, and normal nuclei to grades that were greater than or equal to 7 were grouped as 7. Bare nuclei's grades were grouped as greater than or equal to 6 were grouped as 6. Lastly, a binary group (0, 1) was made for grades 1-5 and 6-10 for bland chromatin, cell size, single epithelial cell size, and mitosis. Again, these groupings were done to help with simplifying the interpration of the logistic regression model while leaving the factors as categorical rather than continuous.
 
 ``` {r hist2, message = FALSE, warning = FALSE, eval = TRUE, echo = FALSE}
 
@@ -350,6 +351,9 @@ grid.arrange(p11, p12, p13, p14, p15, p16, p17, p18, p19, top="Distribution of c
 The objective is to identify each of a number of benign or malignant classes through Logistic Regression and feature selection. 
 
 ## Model Selection
+
+An initial logistic regression model was ran with all the features as is, but we received an error stating that the model cannot converge.  
+
 In determining the logistic regression model, model selection technique is used to first create a base model. The main techniques used to determine the base model are backward, forward, and stepwise techniques. Since there are 9 explanatory variables, it is determined to use all the variables in the determination of the model. Also, there are 691 observations in the dataset, and so it is determined to create a training dataset and a testing dataset, where we kept 505 observations for training and 186 for testing that were randomly chosen without replacement. There are also missing values in the Bare.nuclei variable, since there only 16 observations that are missing it is determined to use the mean as the replacement because it should not influence the overall distribution of the variables with such a small amount missing. 
 
 All three techniques reached the same conclusion for the final model in determining what factors indicate malignancy. The factors that entered the model for the model selection techniques are the following: Bare.nuclei, Bl.cromatin, Cell.shape, Cell.size, and Cl.thickness. When looking at the pseudo General F-test (Fig 1.), testing between intercept only and full model, the evidence shows that at least one explanatory variable explains cancer at the 99% significance level.
@@ -396,7 +400,7 @@ When looking at the test statistic for the factors having slopes statistically d
 
 However, when looking at the Goodness of fit test for Hosmer-Lemmeshow for the intuition model, it is found to be statistically insignificant with a p-value of 0.1382. This indicates that there is evidence the intuition model has good fit overall.
 
-Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem to explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
+Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem to have explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
 
 Below are the Odds ratio (Fig 9.) with the 95% confidence interval, for the coefficients estimate of the intuition model. 
 
@@ -432,7 +436,7 @@ When looking at the leverage graph (Fig 9.) of the influence diagnostics, the De
 
 ## Objective 1 Conclusion
 
-Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem to explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
+Taking account for all the tests and factors used in comparing the two models, it is determined that the intuition model is the final model chosen. Although the fit statistics is slightly lower than the base model, however there is lower likelihood of multicollinearity with the substituted variable and the Hosmer-Lemmeshow shows better fit than the base model. Also factors seem  to have explanatory power in differentiating between benign and malignant. Therefore, the final model equation chosen has the following factors Bare.nuclei, Bl.cromatin, Cell.Shape, and Marg.adhesion.
 Below are the Odds ratio with the 95% confidence interval, for the coefficients estimate of the intuition model. 
 
 Below are the Odds ratio (Fig 8.) with the 95% confidence interval, for the coefficients estimate of the intuition model. 
@@ -442,7 +446,7 @@ Below are the Odds ratio (Fig 8.) with the 95% confidence interval, for the coef
 # Objective 2
 
 
-Upon doing the Logistic Regression model for the Breast Cancer data set, we would like to evaluate other models such as Random Forect and Decision Trees to see if we can improve the predictability of the model. 
+Upon doing the Logistic Regression model for the Breast Cancer data set, we would like to evaluate other models such as random forest and decision trees to see if we can improve the predictability of the model. 
 
 A decision tree model was created so that we can evaluate the trees much like how we did visually in objective 1.  
 
@@ -459,7 +463,7 @@ confusionMatrix(dt_prediction, test$Class)
 
 ```
 
-A random forest model was laso created and the feature importance was re-evaluated with the random forest algorithm.  
+A random forest model was also created and the feature importance was re-evaluated with the random forest algorithm.  
 
 Feature Importance:
 ```{r random_forest, echo = FALSE, fig.width= 20, fig.height= 15}
@@ -483,7 +487,25 @@ confusionMatrix(rf_prediction, test$Class)
 
 ```
 # Conclusion
-Though the accuracy the Random Forest model is higher at almost 97%, at this point in time, it may be better to use the Logistic Regression model given that it is more important to predict malignant cases.  
+
+The Random Forest model is the most accurate model predicting 
+
+False positives (FP): We predicted yes, but they don't actually have the disease. (Also known as a "Type I error.")false negatives (FN): We predicted no, but they actually do have the disease. (Also known as a "Type II error.")
+
+
+Model | Measurement | Value
+--------|---------|
+Random Forest|  Accuracy |95.71%
+Decision Tree|  Accuracy | 95%
+Logistic Regression|Accuracy | 91%
+Random Forest | Sensitivity | 99.24%
+Decision Tree |Sensitivity | 90.84
+Logistic Regression |Sensitivity | 90.6%
+Random Forest | Specificity | 92.41%
+Decision Tree | Specificity | 92.41%
+Logistic Regression | Specificity | 94.1%
+
+
 
 
 # Appendix
