@@ -77,7 +77,7 @@ p9 <- ggplot(BreastCancer, aes(Mitoses, fill=Class)) + geom_histogram(stat="coun
 p10 <- ggplot(BreastCancer, aes(Class, fill=Class)) + geom_bar() + scale_fill_manual(values=c("dodgerblue", "red3")) + theme_dark() + theme(legend.position="right") + coord_flip() + labs(title="Overall counts of malignant and benign samples")
 lay <- rbind(c(1,2,3), c(1,2,3), c(4,5,6), c(4,5,6), c(7,8,9), c(7,8,9), c(10,10,10), c(10,10,10))
 
-grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, top="Exploring distribution of cancer per cytological characteristic grade", layout_matrix=lay)
 
 BreastCancer2 <- BreastCancer
 BreastCancer2$Cl.thickness <- as.character(BreastCancer2$Cl.thickness)
@@ -329,8 +329,7 @@ Biopsies were collected via fine needle aspiration (FNA), it is a procedure wher
 
 ```{r hist1, eval = TRUE, echo = FALSE, warning= FALSE, message= FALSE}
 
-
-grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, top="Exploring distribution of cancer per cytological characteristic grade", layout_matrix=lay)
 
 ```
 
